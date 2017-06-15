@@ -15,3 +15,4 @@ server.pid
 /dist/
 .cache
 .idea
+*.iml
