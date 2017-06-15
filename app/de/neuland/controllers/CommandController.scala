@@ -1,4 +1,4 @@
-package controllers
+package de.neuland.controllers
 
 import javax.inject.{Inject, Singleton}
 
@@ -11,8 +11,6 @@ class CommandController @Inject() extends Controller {
   
   def executeCommand = Action { request => 
     Logger.info("Parameters: " + request.body)
-    
-    
     
     
     Ok(Json.obj(
