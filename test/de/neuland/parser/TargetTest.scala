@@ -1,12 +1,15 @@
 package de.neuland.parser
 
+import java.time.LocalTime
+
 import fastparse.all._
+import fastparse.core.Parsed.Success
 import org.scalatest.FunSuite
 
 class BaseParserTest extends FunSuite {
   protected val parser = new Parser()
 }
-
+/*
 class TargetTest extends BaseParserTest {
   test("should parse me") {
     val Parsed.Success("me", 5) = parser.target.parse("me   ")
@@ -28,17 +31,21 @@ class TargetTest extends BaseParserTest {
     val Parsed.Success("ME", _) = parser.target.parse("ME")
   }
 }
-
+*/
 class QuotedStringTest extends BaseParserTest {
   test("should parse quoted string") {
     val Parsed.Success("quoted string", _) = parser.quotedString.parse("\"quoted string\"")
+  }
+
+  test("should eat whitespace") {
+    val Parsed.Success("quoted string", _) = parser.quotedString.parse("\"quoted string\"       ")
   }
 
   test("should not parse unbalanced quotes") {
     val Parsed.Failure(_, _, _) = parser.quotedString.parse("\"unbalanced quotes")
   }
 }
-
+/*
 class NumberTest extends BaseParserTest {
   test("should parse numbers") {
     val Parsed.Success(5, _) = parser.numberThing.parse("5")
@@ -48,21 +55,24 @@ class NumberTest extends BaseParserTest {
     val Parsed.Success(1, _) = parser.numberThing.parse("one   ")
   }
 }
-
+*/
 class IntervalTest extends BaseParserTest {
   test("should parse interval") {
-    val Parsed.Success((Some(5), "weeks"), _) = parser.intervalThing.parse("every 5 weeks")
-  }
-
-  test("should parse other interval") {
-    val Parsed.Success((None, "weekday"), _) = parser.intervalThing.parse("every weekday")
+    val Parsed.Success((5, Week), _) = parser.intervalThing.parse("every 5 weeks")
   }
 
   test("should parse interval with number word") {
-    val Parsed.Success((Some(2), "days"), _) = parser.intervalThing.parse("every two days")
+    val Parsed.Success((2, Day), _) = parser.intervalThing.parse("every two days")
   }
 }
 
+class CertainDaysTest extends BaseParserTest {
+  test("should parse certain days") {
+    val Parsed.Success((1, AllWeekdays), _) = parser.certainDays.parse("every weekday")
+  }
+}
+
+/*
 class TimestampTest extends BaseParserTest {
   test("should parse 24-hour time") {
     val Parsed.Success("11:45", _) = parser.timeThing.parse("at 11:45")
@@ -104,5 +114,20 @@ class ParserTest extends BaseParserTest {
 
   test("should parse double-quoted string") {
     val Parsed.Success(("#channel1", "\"don't scare the bear\""), _) = parser.basicTest.parse("#channel1 \"don\'t scare the bear\"")
+  }
+}
+*/
+
+class OnCertainDaysTest extends BaseParserTest {
+  test("should parse day and time") {
+    val Parsed.Success(OnCertainDays(AllWeekdays, 1, AbsoluteTime(t)), _) = parser.onCertainDays.parse("every weekday at 9:25")
+    assert(t == LocalTime.of(9, 25))
+  }
+}
+
+class ReminderTest extends BaseParserTest {
+  test("should parse a reminder") {
+    val Parsed.Success(ParseResult(Channel("OBI"), "Standup beginnt in 5 Minuten", Seq(OnCertainDays(AllWeekdays, 1, AbsoluteTime(t)))), _) = parser.reminder.parse("#OBI \"Standup beginnt in 5 Minuten\" every weekday at 9:25")
+    assert(t == LocalTime.of(9, 25))
   }
 }
