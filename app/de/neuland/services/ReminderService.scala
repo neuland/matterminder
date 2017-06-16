@@ -1,15 +1,23 @@
 package de.neuland.services
 
-import javax.inject.Inject
+import java.time.LocalDateTime
+import java.util.UUID
+import javax.inject.{Inject, Named}
 
+import akka.actor.{ActorRef, ActorSystem, Props}
 import de.neuland.models.SlashCommand
+import de.neuland.reminder.Reminder
 import de.neuland.repositories.ReminderRepository
+import de.neuland.scheduling.Scheduler.ScheduleReminder
 
-class ReminderService @Inject() (reminderRepository: ReminderRepository) {
+class ReminderService @Inject() (@Named("scheduler") scheduler: ActorRef, system: ActorSystem, reminderRepository: ReminderRepository) {
 
   def createReminder(slashCommand: SlashCommand): Unit = {
     // save to repository
-    // notify scheduling actor
+
+    val id = UUID.randomUUID().toString
+    val reminder = system.actorOf(Props(new Reminder(slashCommand.text, id)), name = id)
+    scheduler ! ScheduleReminder(id, LocalDateTime.now().plusMinutes(1))
   }
 
   def scheduleExistingReminders(): Unit = {
