@@ -5,7 +5,7 @@ import java.util.UUID
 import javax.inject.{Inject, Named}
 
 import akka.actor.{ActorRef, ActorSystem, Props}
-import de.neuland.models.SlashCommand
+import de.neuland.models.{ReminderRecord, SlashCommand}
 import de.neuland.reminder.Reminder
 import de.neuland.repositories.ReminderRepository
 import de.neuland.scheduling.Scheduler.ScheduleReminder
@@ -13,7 +13,11 @@ import de.neuland.scheduling.Scheduler.ScheduleReminder
 class ReminderService @Inject() (@Named("scheduler") scheduler: ActorRef, system: ActorSystem, reminderRepository: ReminderRepository) {
 
   def createReminder(slashCommand: SlashCommand): Unit = {
-    // save to repository
+    reminderRepository.save(ReminderRecord(
+      slashCommand.userName,
+      slashCommand.channelName,
+      slashCommand.text
+    ))
 
     val id = UUID.randomUUID().toString
     val reminder = system.actorOf(Props(new Reminder(slashCommand.text, id)), name = id)
