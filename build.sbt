@@ -14,6 +14,8 @@ libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0
 
 libraryDependencies += "com.lihaoyi" %% "fastparse" % "0.4.3"
 
+libraryDependencies += ws
+
 // Adds additional packages into Twirl
 //TwirlKeys.templateImports += "de.neuland.controllers._"
 

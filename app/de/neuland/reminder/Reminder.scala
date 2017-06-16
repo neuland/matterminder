@@ -1,17 +1,18 @@
 package de.neuland.reminder
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorRef}
+import de.neuland.client.WebhookClient.SendRemind
 import de.neuland.reminder.Reminder.Remind
 
 object Reminder {
   case object Remind
 }
 
-class Reminder(message: String, id: String) extends Actor {
+class Reminder(message: String, channel: String, id: String, webhookClient: ActorRef) extends Actor {
   
   override def receive: Receive = {
     case Remind => {
-     println("Don't forget to " + message)
+     webhookClient ! SendRemind(message, channel)
     }
   }
   

@@ -17,7 +17,7 @@ class CommandController @Inject() (reminderService: ReminderService) extends Con
 
         Ok(Json.obj(
           "response_type" -> "in_channel",
-          "text" -> slashCommand.text,
+          "text" -> ( "reminder saved: " + slashCommand.text),
           "username" -> "Matterminder"
         ))
       case None =>

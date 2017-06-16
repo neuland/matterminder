@@ -22,11 +22,8 @@ object Scheduler {
 
 class Scheduler @Inject() (system: ActorSystem) extends Actor {
 
-  Logger.info(self.path.toString)
-  
   private var reminders = scala.collection.mutable.Map[String, List[String]]()
   private val dateTimeToKeyFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm")
-
 
   system.scheduler.schedule(secondsUntilFullMinute(LocalDateTime.now()).seconds, 1.minutes) {
     executeTasks()
@@ -44,12 +41,10 @@ class Scheduler @Inject() (system: ActorSystem) extends Actor {
   def executeTasks(): Unit = {
     val key = toKey(LocalDateTime.now())
     val remindersToExecute = reminders.getOrElse(key, List[String]())
-    Logger.info("all reminders: " + reminders)
     reminders -= key
     remindersToExecute.foreach(reminderId => system.actorSelection("/user/" + reminderId).resolveOne(10.seconds).onComplete {
       case Success(actorRef) => {
         actorRef ! Remind
-        Logger.info("remind was sent!")
       }
       case Failure(ex) => Logger.error("Could not find Reminder with id '" + reminderId + "'")
     })
