@@ -12,6 +12,8 @@ libraryDependencies += "org.mongodb.scala" %% "mongo-scala-driver" % "2.1.0"
 
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % Test
 
+libraryDependencies += "com.lihaoyi" %% "fastparse" % "0.4.3"
+
 // Adds additional packages into Twirl
 //TwirlKeys.templateImports += "de.neuland.controllers._"
 
