@@ -13,13 +13,17 @@ class CommandController @Inject() (reminderService: ReminderService) extends Con
   def executeCommand = Action { request =>
     request.body.asFormUrlEncoded.map(SlashCommand(_)) match {
       case Some(slashCommand) =>
-        reminderService.createReminder(slashCommand)
-
-        Ok(Json.obj(
-          "response_type" -> "in_channel",
-          "text" -> ( "reminder saved: " + slashCommand.text),
-          "username" -> "Matterminder"
-        ))
+        
+        slashCommand.command match {
+          case "/remind" =>
+            reminderService.createReminder(slashCommand)
+    
+            Ok(Json.obj(
+              "response_type" -> "in_channel",
+              "text" -> ( "reminder saved: " + slashCommand.text),
+              "username" -> "Matterminder"
+            ))
+        }
       case None =>
         BadRequest("")
     }
