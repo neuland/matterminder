@@ -8,14 +8,6 @@ import scala.slick.lifted.TableQuery
 
 
 class ReminderRepo {
-  def getById(id: String): Option[Reminder] = {
-    val reminders: TableQuery[Reminders] = TableQuery[Reminders]
-    Database.forURL("jdbc:postgresql://localhost/matterminder", driver = "org.postgresql.Driver", user = "matterminder", password =  "matterminder") withSession {
-      implicit session =>
-        return reminders.filter(_.id === id).firstOption
-    }
-  }
-
 
   def getAll: List[Reminder] = {
     val reminders: TableQuery[Reminders] = TableQuery[Reminders]
@@ -24,9 +16,25 @@ class ReminderRepo {
         return reminders.list
     }
   }
+  
+  def getById(id: String): Option[Reminder] = {
+    val reminders: TableQuery[Reminders] = TableQuery[Reminders]
+    Database.forURL("jdbc:postgresql://localhost/matterminder", driver = "org.postgresql.Driver", user = "matterminder", password =  "matterminder") withSession {
+      implicit session =>
+        return reminders.filter(_.id === id).firstOption
+    }
+  }
+  
+  def getByChannel(channel: String): List[Reminder] = {
+    val reminders: TableQuery[Reminders] = TableQuery[Reminders]
+    Database.forURL("jdbc:postgresql://localhost/matterminder", driver = "org.postgresql.Driver", user = "matterminder", password =  "matterminder") withSession {
+      implicit session =>
+        return reminders.filter(_.recipient === channel.toLowerCase).sortBy(_.id).list
+    }
+  }
 
   def save(author: String, message: String, channelName: String, id: String, schedules: Seq[Schedule]): Unit = {
-    val reminder = Reminder(id, author, channelName, message, schedulesToSchedulesString(schedules))
+    val reminder = Reminder(id, author, channelName.toLowerCase, message, schedulesToSchedulesString(schedules))
     
     val reminders: TableQuery[Reminders] = TableQuery[Reminders]
     Database.forURL("jdbc:postgresql://localhost/matterminder", driver = "org.postgresql.Driver", user = "matterminder", password =  "matterminder") withSession {

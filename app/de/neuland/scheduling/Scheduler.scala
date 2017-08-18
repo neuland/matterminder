@@ -7,7 +7,7 @@ import javax.inject.Inject
 import akka.actor._
 import de.neuland.parser.Schedule
 import de.neuland.reminder.ReminderActor.Remind
-import de.neuland.scheduling.Scheduler.ScheduleReminder
+import de.neuland.scheduling.Scheduler.{ScheduleReminder, UnscheduleReminder}
 import de.neuland.services.ReminderService
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -19,6 +19,7 @@ object Scheduler {
   def props: Props = Props[Scheduler]
 
   case class ScheduleReminder(reminderId: String, when: LocalDateTime)
+  case class UnscheduleReminder(reminderId: String)
   
   def nextExecution(schedules: Seq[Schedule]): Option[LocalDateTime] = {
     //noinspection MapFlatten
@@ -49,6 +50,8 @@ class Scheduler @Inject() (system: ActorSystem, reminderService: ReminderService
   override def receive: Receive = {
     case ScheduleReminder(reminder: String, when: LocalDateTime) =>
       scheduleReminder(reminder, when)
+    case UnscheduleReminder(reminder: String) =>
+      unscheduleReminder(reminder)
   }
 
   private def scheduleReminder(reminder: String, when: LocalDateTime): Unit = {
@@ -58,8 +61,21 @@ class Scheduler @Inject() (system: ActorSystem, reminderService: ReminderService
       reminderIdsByTime(timeKey) = reminder :: presentReminders
     }
   }
+  
+  private def unscheduleReminder(reminderId: String): Unit = {
+    reminderIdsByTime
+      .withFilter(entry => entry._2.contains(reminderId))
+      .foreach(entry => {
+        val remindersWithoutRemovedOne = entry._2.filter(reminder => reminder != reminderId)
+        if(remindersWithoutRemovedOne.isEmpty) {
+          reminderIdsByTime -= entry._1
+        } else {
+          reminderIdsByTime(entry._1) = remindersWithoutRemovedOne
+        }
+      })
+  }
 
-  def executeTasks(): Unit = {
+  private def executeTasks(): Unit = {
     val timeKey = toTimeKey(LocalDateTime.now())
     val remindersToExecute = reminderIdsByTime.getOrElse(timeKey, List[String]())
     reminderIdsByTime -= timeKey

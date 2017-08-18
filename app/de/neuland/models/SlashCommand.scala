@@ -8,12 +8,17 @@ case class SlashCommand(
    channelName: String,
    userId: String,
    userName: String,
+   commandType: String,
    command: String,
    text: String
  )
 
 object SlashCommand {
-  def apply(requestBody: Map[String, Seq[String]]): SlashCommand =
+  private val knownCommandTypes = Set("create", "list", "delete")
+  private val commandTypeMatcher = s"^(${knownCommandTypes.mkString("|")}) ?".r
+  
+  def apply(requestBody: Map[String, Seq[String]]): SlashCommand = {
+    val command: CommandTypeAndCommand = splitCommandToCommandAndCommandType(requestBody("text").head)
     SlashCommand(
       requestBody("token").head,
       requestBody("team_id").head,
@@ -22,7 +27,24 @@ object SlashCommand {
       requestBody("channel_name").head,
       requestBody("user_id").head,
       requestBody("user_name").head,
-      requestBody("command").head,
-      requestBody("text").head
+      command.commandType,
+      command.command,
+      removeLeadingCommandType(requestBody("text").head)
     )
+  }
+
+  private def splitCommandToCommandAndCommandType(commandFromRequestBody: String): CommandTypeAndCommand = {
+    commandFromRequestBody match {
+      case c if c.startsWith("create") => CommandTypeAndCommand("create", removeLeadingCommandType(c))
+      case c if c.startsWith("list") => CommandTypeAndCommand("list", removeLeadingCommandType(c))
+      case c if c.startsWith("delete") => CommandTypeAndCommand("delete", removeLeadingCommandType(c))
+      case c => CommandTypeAndCommand("create", c)
+    }
+  }
+  
+  private def removeLeadingCommandType(text: String): String = {
+    commandTypeMatcher.replaceFirstIn(text, "")
+  }
+  
+  private case class CommandTypeAndCommand(commandType: String, command: String)
 }

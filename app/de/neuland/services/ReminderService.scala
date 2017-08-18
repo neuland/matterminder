@@ -11,13 +11,12 @@ import de.neuland.reminder.ReminderActor
 import de.neuland.reminder.postgres.Reminder
 import de.neuland.repositories.ReminderRepo
 import de.neuland.scheduling.Scheduler
-import de.neuland.scheduling.Scheduler.ScheduleReminder
+import de.neuland.scheduling.Scheduler.{ScheduleReminder, UnscheduleReminder}
 import fastparse.core.Parsed
 import play.api.Logger
 
 @Singleton
 class ReminderService @Inject() (@Named("scheduler")scheduler: ActorRef, system: ActorSystem, @Named("webhookClient") webhookClient: ActorRef, reminderRepository: ReminderRepo) {
-
 
   private val parser = new Parser()
 
@@ -35,20 +34,7 @@ class ReminderService @Inject() (@Named("scheduler")scheduler: ActorRef, system:
       case other =>
         Logger.warn("failed parsing /remind command! " + other)
     }
-    
-
   }
-
-  def scheduleExistingReminders(): Unit = {
-    val reminders = reminderRepository.getAll
-    println(s"Loaded reminders: ${reminders.map(_.id).mkString(", ")}")
-    reminders.foreach(startReminderActor)
-    
-    
-    // load all reminders from repository
-    // notify scheduling actor
-  }
-
 
   def scheduleOrRemove(reminderId: String): Unit = {
     val maybeReminder = reminderRepository.getById(reminderId)
@@ -60,7 +46,25 @@ class ReminderService @Inject() (@Named("scheduler")scheduler: ActorRef, system:
         reminderRepository.delete(reminderId)
       }
     }
+  }
+  
+  def getRemindersForChannel(channel: String): List[String] = {
+    reminderRepository.getByChannel(channel).map(reminder => s"* **id: '${reminder.id}'** / author: '${reminder.author}' / message: '${reminder.message}'")
+  }
+  
+  def doesReminderExist(remindeId: String): Boolean = {
+    reminderRepository.getById(remindeId).nonEmpty
+  }
+  
+  def delete(reminderId: String): Unit = {
+    scheduler ! UnscheduleReminder(reminderId)
+    reminderRepository.delete(reminderId)
+  }
 
+  private def scheduleExistingReminders(): Unit = {
+    val reminders = reminderRepository.getAll
+    println(s"Loaded reminders: ${reminders.map(_.id).mkString(", ")}")
+    reminders.foreach(startReminderActor)
   }
 
   private def startReminderActor(reminder: Reminder): Unit = {
@@ -81,7 +85,7 @@ class ReminderService @Inject() (@Named("scheduler")scheduler: ActorRef, system:
     }
   }
 
-  def getChannelName(target: Target, originUserName: String, originChannelName: String): String = {
+  private def getChannelName(target: Target, originUserName: String, originChannelName: String): String = {
     /*
       me and @[ownUserName] do not work if [me] is the creator of the webhook
       see:
