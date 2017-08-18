@@ -8,7 +8,9 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 scalaVersion := "2.11.11"
 
 libraryDependencies += filters
-libraryDependencies += "org.mongodb.scala" %% "mongo-scala-driver" % "2.1.0"
+
+libraryDependencies += "org.postgresql" % "postgresql" % "9.3-1100-jdbc4"
+libraryDependencies += "com.typesafe.slick" %% "slick" % "2.1.0"
 
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % Test
 

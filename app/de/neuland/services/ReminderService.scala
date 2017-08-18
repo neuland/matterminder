@@ -2,28 +2,26 @@ package de.neuland.services
 
 import java.time.LocalDateTime
 import java.util.UUID
-import javax.inject.{Inject, Named}
+import javax.inject.{Inject, Named, Singleton}
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import de.neuland.models.SlashCommand
 import de.neuland.parser._
-import de.neuland.reminder.Reminder
-import de.neuland.repositories.ReminderRepository
+import de.neuland.reminder.ReminderActor
+import de.neuland.reminder.postgres.Reminder
+import de.neuland.repositories.ReminderRepo
+import de.neuland.scheduling.Scheduler
 import de.neuland.scheduling.Scheduler.ScheduleReminder
 import fastparse.core.Parsed
 import play.api.Logger
 
-class ReminderService @Inject() (@Named("scheduler") scheduler: ActorRef, system: ActorSystem, @Named("webhookClient") webhookClient: ActorRef, reminderRepository: ReminderRepository) {
-  
+@Singleton
+class ReminderService @Inject() (@Named("scheduler")scheduler: ActorRef, system: ActorSystem, @Named("webhookClient") webhookClient: ActorRef, reminderRepository: ReminderRepo) {
+
+
   private val parser = new Parser()
 
   def createReminder(slashCommand: SlashCommand): Unit = {
-    //reminderRepository.save(ReminderRecord(
-    //  slashCommand.userName,
-    //  slashCommand.channelName,
-    //  slashCommand.text
-    //))
-
     val parsedCommand: Parsed[ParseResult, Char, String] = parser.reminder.parse(slashCommand.text)
     parsedCommand match {
       case Parsed.Success(ParseResult(channel, message, schedules), _) =>
@@ -32,8 +30,8 @@ class ReminderService @Inject() (@Named("scheduler") scheduler: ActorRef, system
         val channelName = getChannelName(channel, slashCommand.userName, slashCommand.channelName)
         
         val id = UUID.randomUUID().toString
-        val reminder = system.actorOf(Props(new Reminder(message, channelName, id, webhookClient)), name = id)
-        scheduler ! ScheduleReminder(id, LocalDateTime.now().plusMinutes(1))
+        startReminderActor(id, message, channelName, schedules)
+        reminderRepository.save(slashCommand.userName, message, channelName, id, schedules)
       case other =>
         Logger.warn("failed parsing /remind command! " + other)
     }
@@ -42,8 +40,45 @@ class ReminderService @Inject() (@Named("scheduler") scheduler: ActorRef, system
   }
 
   def scheduleExistingReminders(): Unit = {
+    val reminders = reminderRepository.getAll
+    println(s"Loaded reminders: ${reminders.map(_.id).mkString(", ")}")
+    reminders.foreach(startReminderActor)
+    
+    
     // load all reminders from repository
     // notify scheduling actor
+  }
+
+
+  def scheduleOrRemove(reminderId: String): Unit = {
+    val maybeReminder = reminderRepository.getById(reminderId)
+    if(maybeReminder.nonEmpty) {
+      val maybeNextExecution: Option[LocalDateTime] = maybeReminder.map(_.schedules).map(toSchedules).flatMap(Scheduler.nextExecution)
+      if(maybeNextExecution.nonEmpty) {
+        scheduler ! ScheduleReminder(reminderId, maybeNextExecution.get)
+      } else {
+        reminderRepository.delete(reminderId)
+      }
+    }
+
+  }
+
+  private def startReminderActor(reminder: Reminder): Unit = {
+    val schedulesString = reminder.schedules
+    val schedules = toSchedules(schedulesString)
+    if(schedules.nonEmpty) {
+      startReminderActor(reminder.id, reminder.message, reminder.recipient, schedules)
+    } else {
+      Logger.warn(s"Could start reminder actor for reminder '${reminder.id}' since its schedules could not be parsed.")
+    }
+  }
+
+  private def startReminderActor(reminderId: String, message: String, channelName: String, schedules: Seq[Schedule]): Unit = {
+    val maybeNextExecution = Scheduler.nextExecution(schedules)
+    if (maybeNextExecution.nonEmpty) {
+      system.actorOf(Props(new ReminderActor(message, channelName, reminderId, schedules, webhookClient)), name = reminderId)
+      scheduler ! ScheduleReminder(reminderId, maybeNextExecution.get)
+    }
   }
 
   def getChannelName(target: Target, originUserName: String, originChannelName: String): String = {
@@ -63,5 +98,11 @@ class ReminderService @Inject() (@Named("scheduler") scheduler: ActorRef, system
     }
     
   }
+
+  def toSchedules(schedulesString: String): Seq[Schedule] = {
+    schedulesString.split("%%%").flatMap(Schedule.fromString)
+  }
+  
+  scheduleExistingReminders()
 
 }
