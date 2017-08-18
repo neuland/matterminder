@@ -2,20 +2,21 @@ package de.neuland.controllers
 
 import javax.inject.{Inject, Singleton}
 
-import de.neuland.models.SlashCommand
+import de.neuland.command.{Commands, SlashCommand}
 import de.neuland.services.ReminderService
-import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{Action, Controller, Result}
 
 @Singleton
 class CommandController @Inject() (reminderService: ReminderService) extends Controller {
-  
+
   def executeCommand = Action { request =>
     request.body.asFormUrlEncoded.map(SlashCommand(_)) match {
       case Some(slashCommand) =>
         
         slashCommand.commandType match {
+          case "help" =>
+            showHelp()
           case "create" =>
             createReminder(slashCommand)
           case "list" =>
@@ -28,6 +29,10 @@ class CommandController @Inject() (reminderService: ReminderService) extends Con
       case None =>
         BadRequest("could not parse request")
     }
+  }
+
+  private def showHelp(): Result = {
+    answer("**available commads:**\n" + Commands.commandHelpTexts.mkString("\n***\n"))
   }
 
   private def createReminder(slashCommand: SlashCommand) = {

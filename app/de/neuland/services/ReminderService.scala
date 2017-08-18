@@ -5,7 +5,7 @@ import java.util.UUID
 import javax.inject.{Inject, Named, Singleton}
 
 import akka.actor.{ActorRef, ActorSystem, Props}
-import de.neuland.models.SlashCommand
+import de.neuland.command.SlashCommand
 import de.neuland.parser._
 import de.neuland.reminder.ReminderActor
 import de.neuland.reminder.postgres.Reminder
