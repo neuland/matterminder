@@ -3,10 +3,13 @@ package de.neuland.client
 import javax.inject.Inject
 
 import akka.actor.{Actor, Props}
+import com.typesafe.config.{Config, ConfigFactory}
 import de.neuland.client.WebhookClient.SendRemind
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
+
+import scala.concurrent.ExecutionContext
 
 object WebhookClient {
   def props: Props = Props[WebhookClient]
@@ -19,8 +22,8 @@ class WebhookClient @Inject() (ws: WSClient) extends Actor {
   
   override def receive: Receive = {
     case SendRemind(text: String, channel: String) =>
-      implicit val context = play.api.libs.concurrent.Execution.Implicits.defaultContext
-      val url = "http://localhost:8065/hooks/p7hjfn1tfbbajk5zo8dn95dzfc"
+      implicit val context: ExecutionContext = play.api.libs.concurrent.Execution.Implicits.defaultContext
+      val url = s"$server/hooks/$outgoingKey"
 
 
       val data = Json.obj(
@@ -33,5 +36,9 @@ class WebhookClient @Inject() (ws: WSClient) extends Actor {
         Logger.debug(s"Response: status: ${response.status} / statusText: ${response.statusText} / body: ${response.body}")
       }
   }
+
+  private val config: Config = ConfigFactory.load("mattermost.conf")
+  val server: String = config.getString("server")
+  val outgoingKey: String = config.getString("key.outgoing")
   
 }
