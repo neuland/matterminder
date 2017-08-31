@@ -23,7 +23,7 @@ class WebhookClient @Inject() (ws: WSClient) extends Actor {
   override def receive: Receive = {
     case SendRemind(text: String, channel: String) =>
       implicit val context: ExecutionContext = play.api.libs.concurrent.Execution.Implicits.defaultContext
-      val url = s"$server/hooks/$outgoingKey"
+      val url = s"$protocol://$server:$port/hooks/$outgoingKey"
 
 
       val data = Json.obj(
@@ -38,7 +38,9 @@ class WebhookClient @Inject() (ws: WSClient) extends Actor {
   }
 
   private val config: Config = ConfigFactory.load("mattermost.conf")
+  val protocol: String = config.getString("protocol")
   val server: String = config.getString("server")
+  val port: String = config.getString("port")
   val outgoingKey: String = config.getString("key.outgoing")
   
 }

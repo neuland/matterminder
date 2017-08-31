@@ -3,6 +3,7 @@ package de.neuland.repositories
 import com.typesafe.config.{Config, ConfigFactory}
 import de.neuland.parser.Schedule
 import de.neuland.reminder.postgres.{Reminder, Reminders}
+import play.api.Logger
 
 import scala.slick.driver.PostgresDriver.simple._
 import scala.slick.lifted.TableQuery
@@ -10,9 +11,15 @@ import scala.slick.lifted.TableQuery
 
 class ReminderRepo {
 
+  private val config: Config = ConfigFactory.load("postgres.conf")
+  private val server: String = "jdbc:postgresql://" + config.getString("server")
+  private val database: String = config.getString("database")
+  private val dbUser: String = config.getString("dbuser")
+  private val dbPassword: String = config.getString("dbpassword")
+
   def getAll: List[Reminder] = {
     val reminders: TableQuery[Reminders] = TableQuery[Reminders]
-    Database.forURL(s"$server/$schema", driver = "org.postgresql.Driver", user = dbUser, password =  dbPassword) withSession {
+    Database.forURL(s"$server/$database", driver = "org.postgresql.Driver", user = dbUser, password =  dbPassword) withSession {
       implicit session =>
         return reminders.list
     }
@@ -20,7 +27,7 @@ class ReminderRepo {
   
   def getById(id: String): Option[Reminder] = {
     val reminders: TableQuery[Reminders] = TableQuery[Reminders]
-    Database.forURL(s"$server/$schema", driver = "org.postgresql.Driver", user = dbUser, password =  dbPassword) withSession {
+    Database.forURL(s"$server/$database", driver = "org.postgresql.Driver", user = dbUser, password =  dbPassword) withSession {
       implicit session =>
         return reminders.filter(_.id === id).firstOption
     }
@@ -28,7 +35,7 @@ class ReminderRepo {
   
   def getByChannel(channel: String): List[Reminder] = {
     val reminders: TableQuery[Reminders] = TableQuery[Reminders]
-    Database.forURL(s"$server/$schema", driver = "org.postgresql.Driver", user = dbUser, password =  dbPassword) withSession {
+    Database.forURL(s"$server/$database", driver = "org.postgresql.Driver", user = dbUser, password =  dbPassword) withSession {
       implicit session =>
         return reminders.filter(_.recipient === channel.toLowerCase).sortBy(_.id).list
     }
@@ -38,7 +45,7 @@ class ReminderRepo {
     val reminder = Reminder(id, author, channelName.toLowerCase, message, schedulesToSchedulesString(schedules))
     
     val reminders: TableQuery[Reminders] = TableQuery[Reminders]
-    Database.forURL(s"$server/$schema", driver = "org.postgresql.Driver", user = dbUser, password =  dbPassword) withSession {
+    Database.forURL(s"$server/$database", driver = "org.postgresql.Driver", user = dbUser, password =  dbPassword) withSession {
       implicit session =>
         reminders += reminder
     }
@@ -46,7 +53,7 @@ class ReminderRepo {
 
   def delete(id: String): Unit = {
     val reminders: TableQuery[Reminders] = TableQuery[Reminders]
-    Database.forURL(s"$server/$schema", driver = "org.postgresql.Driver", user = dbUser, password =  dbPassword) withSession {
+    Database.forURL(s"$server/$database", driver = "org.postgresql.Driver", user = dbUser, password =  dbPassword) withSession {
       implicit session =>
         reminders.filter(_.id === id).delete
     }
@@ -56,9 +63,4 @@ class ReminderRepo {
     schedules.map(_.toString).mkString("%%%")
   }
 
-  private val config: Config = ConfigFactory.load("postgres.conf")
-  val server: String = config.getString("server")
-  val schema: String = config.getString("schema")
-  val dbUser: String = config.getString("dbuser")
-  val dbPassword: String = config.getString("dbpassword")
 }
