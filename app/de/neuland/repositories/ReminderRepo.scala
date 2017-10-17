@@ -18,6 +18,8 @@ class ReminderRepo {
   private val dbUser: String = config.getString("dbuser")
   private val dbPassword: String = config.getString("dbpassword")
   
+  Logger.info(s"using db credentials: user=${dbUser}, pw=${dbPassword}, db=${database}")
+
   createTableIfItDoesNotExist()
 
   def getAll: List[Reminder] = {
