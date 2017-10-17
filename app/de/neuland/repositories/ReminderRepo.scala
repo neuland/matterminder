@@ -3,6 +3,7 @@ package de.neuland.repositories
 import com.typesafe.config.{Config, ConfigFactory}
 import de.neuland.parser.Schedule
 import de.neuland.reminder.postgres.{Reminder, Reminders}
+import slick.jdbc.meta.MTable
 import play.api.Logger
 
 import scala.slick.driver.PostgresDriver.simple._
@@ -16,6 +17,8 @@ class ReminderRepo {
   private val database: String = config.getString("database")
   private val dbUser: String = config.getString("dbuser")
   private val dbPassword: String = config.getString("dbpassword")
+  
+  createTableIfItDoesNotExist()
 
   def getAll: List[Reminder] = {
     val reminders: TableQuery[Reminders] = TableQuery[Reminders]
@@ -61,6 +64,17 @@ class ReminderRepo {
 
   private def schedulesToSchedulesString(schedules: Seq[Schedule]) = {
     schedules.map(_.toString).mkString("%%%")
+  }
+  
+  private def createTableIfItDoesNotExist(): Unit = {
+    val reminders: TableQuery[Reminders] = TableQuery[Reminders]
+    Database.forURL(s"$server/$database", driver = "org.postgresql.Driver", user = dbUser, password =  dbPassword) withSession {
+     implicit session =>
+       val tableAlreadyExists: Boolean = MTable.getTables(reminders.baseTableRow.tableName).firstOption.nonEmpty
+       if(!tableAlreadyExists) {
+         reminders.ddl.create
+       }
+    }
   }
 
 }

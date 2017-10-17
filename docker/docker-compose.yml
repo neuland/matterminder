@@ -11,12 +11,11 @@ services:
 
   matterminder-db:
     container_name: matterminder_db
-    build:
-      context: ../
-      dockerfile: docker/Dockerfile_DB
+    image: postgres:9-alpine
     environment:
+      - POSTGRES_USER=matterminder
       - POSTGRES_PASSWORD=_someSecretPostgresPassword937
-      - MATTERMINDER_PASSWORD=matterminder
+      - POSTGRES_DB=matterminder
     expose:
       - 5432
 
@@ -33,7 +32,7 @@ services:
       - MATTERMINDER_POSTGRES_SERVER=matterminder-db
       - MATTERMINDER_POSTGRES_DATABASE=matterminder
       - MATTERMINDER_POSTGRES_USER=matterminder
-      - MATTERMINDER_POSTGRES_PASSWORD=matterminder
+      - MATTERMINDER_POSTGRES_PASSWORD=_someSecretPostgresPassword937
     depends_on:
       - mattermost
       - matterminder-db

@@ -34,6 +34,7 @@ RUN cd /tmp \
 
 # install matterminder
 RUN cd /usr/local \
+ && ADD https://api.github.com/repos/neuland/matterminder/git/refs/heads/master version.json
  && git clone https://github.com/neuland/matterminder.git \
  && cd matterminder \
  && sbt

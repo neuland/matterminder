@@ -1,5 +1,0 @@
-FROM postgres:9-alpine
-
-COPY database/init.sql /docker-entrypoint-initdb.d/
-
-RUN sed -i "s|secretMatterminderDBPassword|$MATTERMINDER_PASSWORD|g" /docker-entrypoint-initdb.d/init.sql
