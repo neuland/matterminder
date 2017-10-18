@@ -1,5 +1,7 @@
 FROM openjdk:8-jdk-alpine
 
+RUN apk add --update tzdata
+
 # scala setup
 ENV SCALA_VERSION=2.11.11 \
     SCALA_HOME=/usr/share/scala \
@@ -33,6 +35,7 @@ RUN cd /tmp \
  && rm -rf /tmp/*
 
 # install matterminder
+# hack to invalidate cache from here on if the repository has changes
 ADD https://api.github.com/repos/neuland/matterminder/git/refs/heads/master version.json
 RUN cd /usr/local \
  && git clone https://github.com/neuland/matterminder.git \
@@ -43,4 +46,4 @@ EXPOSE 9000
 
 WORKDIR /usr/local/matterminder
 ENTRYPOINT ["/bin/bash"]
-CMD ["-c", "sbt run"]
+CMD ["-c", "sbt start"]
