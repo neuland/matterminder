@@ -40,10 +40,11 @@ ADD https://api.github.com/repos/neuland/matterminder/git/refs/heads/master vers
 RUN cd /usr/local \
  && git clone https://github.com/neuland/matterminder.git \
  && cd matterminder \
- && sbt
+ && sbt stage
  
 EXPOSE 9000
 
 WORKDIR /usr/local/matterminder
-ENTRYPOINT ["/bin/bash"]
-CMD ["-c", "sbt start"]
+ENTRYPOINT ["/usr/local/matterminder/target/universal/stage/bin/matterminder"]
+#ENTRYPOINT ["/bin/bash"]
+#CMD ["-c", "sbt start"]
