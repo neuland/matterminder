@@ -18,7 +18,7 @@ services:
       - POSTGRES_DB=matterminder
     expose:
       - 5432
-    ports:
+    #ports:
       #- 5444:5432
 
   matterminder:
@@ -43,7 +43,7 @@ services:
       - matterminder-db
     expose:
       - 9000
-    ports:
+    #ports:
       #- 5005:5005
     stdin_open: true
       
