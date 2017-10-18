@@ -28,6 +28,7 @@ services:
       dockerfile: docker/Dockerfile_Matterminder
     environment:
       #- JAVA_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005
+      - JAVA_OPTS=-Dplay.crypto.secret="secret.matterMinder_4ppl1c4t10nS3cr3t"
       - TZ=Europe/Berlin
       - MATTERMINDER_MATTERMOST_SERVER=mattermost
       - MATTERMINDER_MATTERMOST_PORT=8065
@@ -37,7 +38,6 @@ services:
       - MATTERMINDER_POSTGRES_DATABASE=matterminder
       - MATTERMINDER_POSTGRES_USER=matterminder
       - MATTERMINDER_POSTGRES_PASSWORD=_someSecretPostgresPassword937
-      - APPLICATION_SECRET=secret.matterMinder_4ppl1c4t10nS3cr3t
     depends_on:
       - mattermost
       - matterminder-db
