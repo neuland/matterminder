@@ -9,11 +9,11 @@ object ReminderActor {
   case object Remind
 }
 
-class ReminderActor(val message: String, val channel: String, val id: String, val schedules: Seq[Schedule], webhookClient: ActorRef) extends Actor {
+class ReminderActor(val message: String, val channel: String, val id: String, val schedules: Seq[Schedule], webhookClient: ActorRef, webhookKey: String) extends Actor {
   
   override def receive: Receive = {
     case Remind =>
-      webhookClient ! SendRemind(message, channel)
+      webhookClient ! SendRemind(message, channel, webhookKey)
   }
   
 }

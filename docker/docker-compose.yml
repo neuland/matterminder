@@ -33,7 +33,7 @@ services:
       - MATTERMINDER_MATTERMOST_SERVER=mattermost
       - MATTERMINDER_MATTERMOST_PORT=8065
       - MATTERMINDER_MATTERMOST_PROTOCOL=http
-      - MATTERMINDER_OUTGOING_KEY=t3u415ozjigb9nb6b94cxg4are
+      - MATTERMINDER_SLASH_COMMAND_TOKEN_TO_WEBHOOK_KEY_MAPPINGS=zf3iqe6ifjdtdef3k8cum6hsfa:obci5q1xd3n1zk3ipttaa6iwsc#guewgmwaa7858cj74ufamfnwwc:t3u415ozjigb9nb6b94cxg4are
       - MATTERMINDER_POSTGRES_SERVER=matterminder-db
       - MATTERMINDER_POSTGRES_DATABASE=matterminder
       - MATTERMINDER_POSTGRES_USER=matterminder
@@ -44,6 +44,6 @@ services:
     expose:
       - 9000
     #ports:
-      #- 5005:5005
+    #  - 5005:5005
     stdin_open: true
       

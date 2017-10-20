@@ -46,7 +46,7 @@ class CommandController @Inject() (reminderService: ReminderService) extends Con
     } else {
       slashCommand.channelName
     }
-    val reminders = reminderService.getRemindersForChannel(channel)
+    val reminders = reminderService.getRemindersForChannel(channel, slashCommand.token)
     val answerText = if (reminders.isEmpty) {
       s"no reminders in channel '$channel'"
     } else {

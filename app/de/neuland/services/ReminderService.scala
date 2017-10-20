@@ -16,7 +16,7 @@ import fastparse.core.Parsed
 import play.api.Logger
 
 @Singleton
-class ReminderService @Inject() (@Named("scheduler")scheduler: ActorRef, system: ActorSystem, @Named("webhookClient") webhookClient: ActorRef, reminderRepository: ReminderRepo) {
+class ReminderService @Inject() (@Named("scheduler")scheduler: ActorRef, system: ActorSystem, @Named("webhookClient") webhookClient: ActorRef, reminderRepository: ReminderRepo, webhookAuthenticationService: WebhookAuthenticationService) {
 
   private val parser = new Parser()
 
@@ -29,8 +29,9 @@ class ReminderService @Inject() (@Named("scheduler")scheduler: ActorRef, system:
         val channelName = getChannelName(channel, slashCommand.userName, slashCommand.channelName)
         
         val id = UUID.randomUUID().toString
-        startReminderActor(id, message, channelName, schedules)
-        reminderRepository.save(slashCommand.userName, message, channelName, id, schedules)
+        startReminderActor(id, message, channelName, schedules, slashCommand.token)
+        val webhookKey = webhookAuthenticationService.getWebhookKeyForCommandToken(slashCommand.token)
+        reminderRepository.save(slashCommand.userName, message, channelName, id, schedules, webhookKey)
       case other =>
         Logger.warn("failed parsing /remind command! " + other)
     }
@@ -48,8 +49,9 @@ class ReminderService @Inject() (@Named("scheduler")scheduler: ActorRef, system:
     }
   }
   
-  def getRemindersForChannel(channel: String): List[String] = {
-    reminderRepository.getByChannel(channel).map(reminder => s"* **id: '${reminder.id}'** / author: '${reminder.author}' / message: '${reminder.message}'")
+  def getRemindersForChannel(channel: String, slashCommandToken: String): List[String] = {
+    val webhookKey = webhookAuthenticationService.getWebhookKeyForCommandToken(slashCommandToken)
+    reminderRepository.getByChannel(channel, webhookKey).map(reminder => s"* **id: '${reminder.id}'** / author: '${reminder.author}' / message: '${reminder.message}'")
   }
   
   def doesReminderExist(remindeId: String): Boolean = {
@@ -71,16 +73,16 @@ class ReminderService @Inject() (@Named("scheduler")scheduler: ActorRef, system:
     val schedulesString = reminder.schedules
     val schedules = toSchedules(schedulesString)
     if(schedules.nonEmpty) {
-      startReminderActor(reminder.id, reminder.message, reminder.recipient, schedules)
+      startReminderActor(reminder.id, reminder.message, reminder.recipient, schedules, reminder.webhookKey)
     } else {
       Logger.warn(s"Could start reminder actor for reminder '${reminder.id}' since its schedules could not be parsed.")
     }
   }
 
-  private def startReminderActor(reminderId: String, message: String, channelName: String, schedules: Seq[Schedule]): Unit = {
+  private def startReminderActor(reminderId: String, message: String, channelName: String, schedules: Seq[Schedule], webhookKey: String): Unit = {
     val maybeNextExecution = Scheduler.nextExecution(schedules)
     if (maybeNextExecution.nonEmpty) {
-      system.actorOf(Props(new ReminderActor(message, channelName, reminderId, schedules, webhookClient)), name = reminderId)
+      system.actorOf(Props(new ReminderActor(message, channelName, reminderId, schedules, webhookClient, webhookKey)), name = reminderId)
       scheduler ! ScheduleReminder(reminderId, maybeNextExecution.get)
     }
   }

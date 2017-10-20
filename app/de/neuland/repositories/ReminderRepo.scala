@@ -36,16 +36,17 @@ class ReminderRepo {
     }
   }
   
-  def getByChannel(channel: String): List[Reminder] = {
+  def getByChannel(channel: String, webhookKey: String): List[Reminder] = {
     val reminders: TableQuery[Reminders] = TableQuery[Reminders]
     Database.forURL(s"$server/$database", driver = "org.postgresql.Driver", user = dbUser, password =  dbPassword) withSession {
       implicit session =>
-        return reminders.filter(_.recipient === channel.toLowerCase).sortBy(_.id).list
+        return reminders.filter(reminder => reminder.recipient === channel.toLowerCase && reminder.webhookKey === webhookKey)
+          .sortBy(_.id).list
     }
   }
 
-  def save(author: String, message: String, channelName: String, id: String, schedules: Seq[Schedule]): Unit = {
-    val reminder = Reminder(id, author, channelName.toLowerCase, message, schedulesToSchedulesString(schedules))
+  def save(author: String, message: String, channelName: String, id: String, schedules: Seq[Schedule], webhookKey: String): Unit = {
+    val reminder = Reminder(id, author, channelName.toLowerCase, message, schedulesToSchedulesString(schedules), webhookKey)
     
     val reminders: TableQuery[Reminders] = TableQuery[Reminders]
     Database.forURL(s"$server/$database", driver = "org.postgresql.Driver", user = dbUser, password =  dbPassword) withSession {

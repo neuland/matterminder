@@ -9,7 +9,8 @@ class Reminders(tag: Tag) extends Table[Reminder](tag, "reminders") {
   def recipient: Column[String] = column[String]("recipient", O.NotNull)
   def message: Column[String] = column[String]("message", O.NotNull)
   def schedules: Column[String] = column[String]("schedules", O.NotNull)
-  def * : ProvenShape[Reminder] = (id, author, recipient, message, schedules) <> (Reminder.tupled, Reminder.unapply)
+  def webhookKey: Column[String] = column[String]("webhookkey", O.NotNull)
+  def * : ProvenShape[Reminder] = (id, author, recipient, message, schedules, webhookKey) <> (Reminder.tupled, Reminder.unapply)
   def idx_author: Index = index("idx_author", author)
   def idx_recipient: Index = index("idx_recipient", recipient)
 }
