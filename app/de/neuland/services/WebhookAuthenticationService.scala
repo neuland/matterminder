@@ -16,12 +16,12 @@ class WebhookAuthenticationService {
   
   private def createSlashCommandTokenToWebhookKeyMap(config: Config): Map[String, String] = {
     config.getString("slashCommandTokensToWebhookKeys").split("#")
-      .map(tokenToKeyMapping => tokenToKeyMapping.split(":"))
       .flatMap(splitToTokenAndKey)
       .toMap
   }
   
-  private def splitToTokenAndKey(splitEntry: Array[String]): Option[Tuple2[String, String]] = {
+  private def splitToTokenAndKey(mapping: String): Option[Tuple2[String, String]] = {
+    val splitEntry = mapping.split(":")
     if (splitEntry != null && splitEntry.length == 2) 
       Option(splitEntry(0) -> splitEntry(1))
     else

@@ -29,8 +29,8 @@ class ReminderService @Inject() (@Named("scheduler")scheduler: ActorRef, system:
         val channelName = getChannelName(channel, slashCommand.userName, slashCommand.channelName)
         
         val id = UUID.randomUUID().toString
-        startReminderActor(id, message, channelName, schedules, slashCommand.token)
         val webhookKey = webhookAuthenticationService.getWebhookKeyForCommandToken(slashCommand.token)
+        startReminderActor(id, message, channelName, schedules, webhookKey)
         reminderRepository.save(slashCommand.userName, message, channelName, id, schedules, webhookKey)
       case other =>
         Logger.warn("failed parsing /remind command! " + other)
