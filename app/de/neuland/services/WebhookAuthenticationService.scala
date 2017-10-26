@@ -22,11 +22,12 @@ class WebhookAuthenticationService {
   
   private def splitToTokenAndKey(mapping: String): Option[Tuple2[String, String]] = {
     val splitEntry = mapping.split(":")
-    if (splitEntry != null && splitEntry.length == 2) 
+    if (splitEntry != null && splitEntry.length == 2) {
       Option(splitEntry(0) -> splitEntry(1))
-    else
+    } else {
       Logger.warn(s"Could not parse slash command token to webhook key mapping: $splitEntry")
       Option.empty
+    }
   }
 
 }
