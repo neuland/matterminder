@@ -45,4 +45,4 @@ RUN cd /usr/local \
 EXPOSE 9000
 
 WORKDIR /usr/local/matterminder
-ENTRYPOINT ["/usr/local/matterminder/target/universal/stage/bin/matterminder"]
+ENTRYPOINT ["/usr/local/matterminder/deletePIDAndStartMatterminder.sh"]
