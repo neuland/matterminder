@@ -18,8 +18,6 @@ services:
       - POSTGRES_DB=matterminder
     expose:
       - 5432
-    #ports:
-      #- 5444:5432
 
   matterminder:
     container_name: matterminder
@@ -27,8 +25,7 @@ services:
       context: ../
       dockerfile: docker/Dockerfile_Matterminder
     environment:
-      #- JAVA_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005
-      - JAVA_OPTS=-Dplay.crypto.secret="secret.matterMinder_4ppl1c4t10nS3cr3t"
+      - JAVA_OPTS=-Dplay.crypto.secret="secret.matterMinder_4ppl1c4t10nS3cr3t" #-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005
       - TZ=Europe/Berlin
       - MATTERMINDER_MATTERMOST_SERVER=mattermost
       - MATTERMINDER_MATTERMOST_PORT=8065
