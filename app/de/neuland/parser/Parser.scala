@@ -48,15 +48,6 @@ class Parser {
 
   val upToTwoDigits = P(digit.rep(min=1, max=2).!)
   val twoDigits = P((digit ~ digit).!)
-  val time_12: all.Parser[Time] = P(upToTwoDigits ~ (":" ~ twoDigits).? ~ ("am" | "pm").! ~ wordSep) map {
-    case (hours, Some(minutes), "am") => AbsoluteTime(LocalTime.of(hours.toInt, minutes.toInt))
-    case (hours, None, "am") => AbsoluteTime(LocalTime.of(hours.toInt, 0))
-    case (hours, Some(minutes), "pm") => AbsoluteTime(LocalTime.of(hours.toInt + 12, minutes.toInt))
-    case (hours, None, "pm") => AbsoluteTime(LocalTime.of(hours.toInt + 12, 0))
-  }
-  val time_24: all.Parser[Time] = P(upToTwoDigits ~ ":" ~ twoDigits ~ wordSep) map {
-    case (hours, minutes) => AbsoluteTime(LocalTime.of(hours.toInt, minutes.toInt))
-  }
 
   val zero = numberWord("zero", 0)
   val one = numberWord("one", 1)
@@ -73,6 +64,15 @@ class Parser {
     ))*/
 
   val timeThing: fastparse.all.Parser[Time] = P(at ~ (time_12 | time_24))
+  val time_24: all.Parser[Time] = P(upToTwoDigits ~ ":" ~ twoDigits ~ wordSep) map {
+    case (hours, minutes) => AbsoluteTime(LocalTime.of(hours.toInt, minutes.toInt))
+  }
+  val time_12: all.Parser[Time] = P(upToTwoDigits ~ (":" ~ twoDigits).? ~ anyWhitespace.? ~ ("am" | "pm").! ~ wordSep) map {
+    case (hours, Some(minutes), "am") => AbsoluteTime(LocalTime.of(hours.toInt, minutes.toInt))
+    case (hours, None, "am") => AbsoluteTime(LocalTime.of(hours.toInt, 0))
+    case (hours, Some(minutes), "pm") => AbsoluteTime(LocalTime.of(hours.toInt + 12, minutes.toInt))
+    case (hours, None, "pm") => AbsoluteTime(LocalTime.of(hours.toInt + 12, 0))
+  }
 
   val me: fastparse.all.Parser[Target] = P(IgnoreCase("me").! ~ wordSep).map(_ => Me)
   val user: fastparse.all.Parser[Target] = P("@" ~ word.! ~ wordSep).map(User)

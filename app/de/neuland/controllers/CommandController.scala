@@ -36,8 +36,12 @@ class CommandController @Inject() (reminderService: ReminderService) extends Con
   }
 
   private def createReminder(slashCommand: SlashCommand) = {
-    reminderService.createReminder(slashCommand)
-    answer("reminder saved: " + slashCommand.text)
+    val successfullyCreated = reminderService.createReminder(slashCommand)
+    if (successfullyCreated) {
+      answer(s":white_check_mark: reminder saved: ${slashCommand.text}")
+    } else {
+      answer(s":x: could not save reminder: ${slashCommand.text}")
+    }
   }
 
   private def listReminders(slashCommand: SlashCommand) = {
@@ -58,12 +62,12 @@ class CommandController @Inject() (reminderService: ReminderService) extends Con
   private def deleteReminder(slashCommand: SlashCommand): Result = {
     val reminderId = slashCommand.command.trim
     if (reminderId.isEmpty) {
-      answer("**No reminder id given!**")
+      answer(":x: **No reminder id given!**")
     } else if(!reminderService.doesReminderExist(reminderId)) {
-      answer(s"**Reminder '$reminderId' does not exist!**")
+      answer(s":x: **Reminder '$reminderId' does not exist!**")
     } else {
       reminderService.delete(reminderId)
-      answer(s"Reminder '$reminderId' was successfully deleted.")
+      answer(s":white_check_mark: Reminder '$reminderId' was successfully deleted.")
     }
   }
   

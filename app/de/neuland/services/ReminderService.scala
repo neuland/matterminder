@@ -20,8 +20,8 @@ class ReminderService @Inject() (@Named("scheduler")scheduler: ActorRef, system:
 
   private val parser = new Parser()
 
-  def createReminder(slashCommand: SlashCommand): Unit = {
-    val parsedCommand: Parsed[ParseResult, Char, String] = parser.reminder.parse(slashCommand.text)
+  def createReminder(slashCommand: SlashCommand): Boolean = {
+    val parsedCommand: Parsed[ParseResult, Char, String] = parser.reminder.parse(slashCommand.text.trim)
     parsedCommand match {
       case Parsed.Success(ParseResult(channel, message, schedules), _) =>
         Logger.debug(s"channel: $channel / message: $message / schedules: $schedules")
@@ -32,8 +32,10 @@ class ReminderService @Inject() (@Named("scheduler")scheduler: ActorRef, system:
         val webhookKey = webhookAuthenticationService.getWebhookKeyForCommandToken(slashCommand.token)
         startReminderActor(id, message, channelName, schedules, webhookKey)
         reminderRepository.save(slashCommand.userName, message, channelName, id, schedules, webhookKey)
+        true
       case other =>
         Logger.warn("failed parsing /remind command! " + other)
+        false
     }
   }
 
