@@ -71,7 +71,8 @@ class CommandController @Inject() (reminderService: ReminderService) extends Con
     Ok(Json.obj(
       "response_type" -> "in_channel",
       "text" -> message,
-      "username" -> "Matterminder"
+      "username" -> "Matterminder",
+      "response_type" -> "ephemeral"
     ))
   }
 }
