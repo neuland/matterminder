@@ -9,18 +9,18 @@ import play.filters.hosts.AllowedHostsFilter
 /**
  * Add the following filters by default to all projects
  * 
- * https://www.playframework.com/documentation/latest/ScalaCsrf 
+ * https://www.playframework.com/documentation/latest/ScalaCsrf
  * https://www.playframework.com/documentation/latest/AllowedHostsFilter
  * https://www.playframework.com/documentation/latest/SecurityHeaders
  */
 class Filters @Inject() (
-  csrfFilter: CSRFFilter,
+  //csrfFilter: CSRFFilter,
   //allowedHostsFilter: AllowedHostsFilter,
   securityHeadersFilter: SecurityHeadersFilter,
   accessLoggingFilter: AccessLoggingFilter
 ) extends DefaultHttpFilters(
   accessLoggingFilter,
-  csrfFilter, 
+  //csrfFilter, 
   //allowedHostsFilter, 
   securityHeadersFilter
 )
