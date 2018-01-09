@@ -4,7 +4,6 @@ import com.typesafe.config.{Config, ConfigFactory}
 import de.neuland.parser.Schedule
 import de.neuland.reminder.postgres.{Reminder, Reminders}
 import slick.jdbc.meta.MTable
-import play.api.Logger
 
 import scala.slick.driver.PostgresDriver.simple._
 import scala.slick.lifted.TableQuery

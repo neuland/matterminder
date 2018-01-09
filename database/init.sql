@@ -10,6 +10,7 @@ CREATE TABLE "public"."reminders" (
   "message" Character Varying( 2044 ) NOT NULL,
   "id" Character Varying( 40 ) NOT NULL,
   "schedules" Text NOT NULL,
+  "webhookkey" Character Varying( 200 ) NOT NULL,
   PRIMARY KEY ( "id" ) )
 ;
 

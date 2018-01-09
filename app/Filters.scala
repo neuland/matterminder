@@ -1,7 +1,7 @@
 import javax.inject.Inject
 
+import de.neuland.logging.AccessLoggingFilter
 import play.api.http.DefaultHttpFilters
-
 import play.filters.csrf.CSRFFilter
 import play.filters.headers.SecurityHeadersFilter
 import play.filters.hosts.AllowedHostsFilter
@@ -16,8 +16,10 @@ import play.filters.hosts.AllowedHostsFilter
 class Filters @Inject() (
   csrfFilter: CSRFFilter,
   //allowedHostsFilter: AllowedHostsFilter,
-  securityHeadersFilter: SecurityHeadersFilter
+  securityHeadersFilter: SecurityHeadersFilter,
+  accessLoggingFilter: AccessLoggingFilter
 ) extends DefaultHttpFilters(
+  accessLoggingFilter,
   csrfFilter, 
   //allowedHostsFilter, 
   securityHeadersFilter
