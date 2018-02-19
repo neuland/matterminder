@@ -42,7 +42,11 @@ An example dockerfile and docker-compose file is provided in the docker folder.
 
 ## Mattermost Configuration
 
-Incoming webhooks and slash commands must be allowed (**System Console** => **Custom Integrations**).
+Incoming webhooks and slash commands must be allowed (**System Console** => **Integrations** => **Custom Integrations**).
+
+Starting with Mattermost v4.2.2, if your Matterminder instance has an internal IP address, you have to allow this connection in the configuration (**System Console** => **Advanced** => **Developer** => **Allow untrusted internal connections to**).
+> https://docs.mattermost.com/administration/config-settings.html#allow-untrusted-internal-connections-to
+
 After this, for each team that should be able to use Matterminder, a slash command and an incoming webhook needs to be created.
 
 ### Slash Command
