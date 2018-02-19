@@ -36,7 +36,7 @@ services:
       - MATTERMINDER_MATTERMOST_PORT=8065
       - MATTERMINDER_MATTERMOST_PROTOCOL=http
       - MATTERMINDER_SLASH_COMMAND_TOKEN_TO_WEBHOOK_KEY_MAPPINGS=zf3iqe6ifjdtdef3k8cum6hsfa:obci5q1xd3n1zk3ipttaa6iwsc#guewgmwaa7858cj74ufamfnwwc:t3u415ozjigb9nb6b94cxg4are
-      - MATTERMINDER_POSTGRES_SERVER=matterminder-db
+      - MATTERMINDER_POSTGRES_SERVER=jdbc:postgresql://matterminder-db
       - MATTERMINDER_POSTGRES_DATABASE=matterminder
       - MATTERMINDER_POSTGRES_USER=matterminder
       - MATTERMINDER_POSTGRES_PASSWORD=_someSecretPostgresPassword937
