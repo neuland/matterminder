@@ -1,22 +1,21 @@
 package de.neuland.scheduling
 
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import javax.inject.Inject
-
 import akka.actor._
 import de.neuland.parser.Schedule
 import de.neuland.reminder.ReminderActor.Remind
 import de.neuland.scheduling.Scheduler.{ScheduleReminder, UnscheduleReminder}
 import de.neuland.services.ReminderService
-import play.api.Logger
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.Logging
 
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import javax.inject.Inject
+import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 object Scheduler {
-  def props: Props = Props[Scheduler]
+  def props: Props = Props[Scheduler]()
 
   case class ScheduleReminder(reminderId: String, when: LocalDateTime)
   case class UnscheduleReminder(reminderId: String)
@@ -38,13 +37,13 @@ object Scheduler {
 }
 
 
-class Scheduler @Inject() (system: ActorSystem, reminderService: ReminderService) extends Actor {
+class Scheduler @Inject() (system: ActorSystem, reminderService: ReminderService) extends Actor with Logging {
 
   private var reminderIdsByTime = scala.collection.mutable.Map[String, List[String]]()
   private val dateTimeToKeyFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm")
 
-  system.scheduler.schedule(secondsUntilFullMinute(LocalDateTime.now()).seconds, 1.minutes) {
-    executeTasks()
+  system.scheduler.scheduleAtFixedRate(secondsUntilFullMinute(LocalDateTime.now()).seconds, 1.minutes) {
+    () => executeTasks()
   }
   
   override def receive: Receive = {
@@ -83,7 +82,7 @@ class Scheduler @Inject() (system: ActorSystem, reminderService: ReminderService
       case Success(actorRef) =>
         actorRef ! Remind
         reminderService.scheduleOrRemove(reminderId)
-      case Failure(ex) => Logger.error("Could not find Reminder with id '" + reminderId + "'")
+      case Failure(ex) => logger.error("Could not find Reminder with id '" + reminderId + "'", ex)
     })
   }
 

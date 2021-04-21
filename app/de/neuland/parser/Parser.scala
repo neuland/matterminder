@@ -2,97 +2,75 @@ package de.neuland.parser
 
 import java.time.LocalTime
 
-import fastparse.all
-import fastparse.all._
+import fastparse._, NoWhitespace._
 
 class Parser {
-  val anyWhitespace = P(CharPred(_.isWhitespace).rep)
-  val word = P(CharPred(c => !c.isWhitespace && !c.isControl).rep(1))
-  val wordSep = P(CharPred(c => c.isWhitespace || c.isControl).rep(1) | End)
+  private def day[_: P] = P(StringInIgnoreCase("day", "days").! ~ wordSep).map(_ => Day)
+  private def week[_: P] = P(StringInIgnoreCase("week", "weeks").! ~ wordSep).map(_ => Week)
+  private def weekday[_: P] = P(StringInIgnoreCase("weekday", "weekdays").! ~ wordSep).map(_ => AllWeekdays)
+  private def monday[_: P] = P(StringInIgnoreCase("monday", "mondays").! ~ wordSep).map(_ => Monday)
+  private def tuesday[_: P] = P(StringInIgnoreCase("tuesday", "tuesdays").! ~ wordSep).map(_ => Tuesday)
+  private def wednesday[_: P] = P(StringInIgnoreCase("wednesday", "wednesdays").! ~ wordSep).map(_ => Wednesday)
+  private def thursday[_: P] = P(StringInIgnoreCase("thursday", "thursdays").! ~ wordSep).map(_ => Thursday)
+  private def friday[_: P] = P(StringInIgnoreCase("friday", "fridays").! ~ wordSep).map(_ => Friday)
+  private def saturday[_: P] = P(StringInIgnoreCase("saturday", "saturdays").! ~ wordSep).map(_ => Saturday)
+  private def sunday[_: P] = P(StringInIgnoreCase("sunday", "sundays").! ~ wordSep).map(_ => Sunday)
+  private def weekdays[_: P] = P(monday | tuesday | wednesday | thursday | friday | saturday | sunday)
 
-  private def keyword(keyword: String): fastparse.all.Parser[Unit] = {
-    P(IgnoreCase(keyword) ~ wordSep)
-  }
-
-  private def interval(interval: String): fastparse.all.Parser[String] = {
-    P(StringInIgnoreCase(interval, interval + "s").! ~ wordSep)
-  }
-
-  private def numberWord(word: String, number: Int): fastparse.all.Parser[Int] = {
-    P(IgnoreCase(word).map(_ => number) ~ wordSep)
-  }
-
-  val that = keyword("that")
-  val to = keyword("to")
-
-  val at = keyword("at")
-  val every = keyword("every")
-  val on = keyword("on")
-  val in = keyword("in")
-
-  val day = interval("day").map(_ => Day)
-  val week = interval("week").map(_ => Week)
-  val weekday = interval("weekday").map(_ => AllWeekdays)
-  val monday = interval("monday").map(_ => Monday)
-  val tuesday = interval("tuesday").map(_ => Tuesday)
-  val wednesday = interval("wednesday").map(_ => Wednesday)
-  val thursday = interval("thursday").map(_ => Thursday)
-  val friday = interval("friday").map(_ => Friday)
-  val saturday = interval("saturday").map(_ => Saturday)
-  val sunday = interval("sunday").map(_ => Sunday)
-
-  val weekdays: all.Parser[CertainDay] = P(monday | tuesday | wednesday | thursday | friday | saturday | sunday)
-
-  val digit = P(CharPred(_.isDigit).!)
-  val number = P(digit.rep(1).!.map(_.toInt) ~ wordSep)
-
-  val upToTwoDigits = P(digit.rep(min=1, max=2).!)
-  val twoDigits = P((digit ~ digit).!)
-
-  val zero = numberWord("zero", 0)
-  val one = numberWord("one", 1)
-  val two = numberWord("two", 2)
-
-  val numberThing: fastparse.all.Parser[Int] = P(number | one | two | zero)
-
-  val intervalThing: all.Parser[(Int, Interval)] = P(every ~ numberThing.?.map(_.getOrElse(1)) ~ (day | week))
-  val certainDays: all.Parser[(Int, CertainDay)] = P(every ~ numberThing.?.map(_.getOrElse(1)) ~ (weekday | weekdays))
-
-  /*val intervalThing: all.Parser[(Option[Int], Either[Interval, CertainDay])] = P(
-    every ~ numberThing.? ~ (
-      (day | week).map(Left(_)) | (weekday | weekdays).map(Right(_))
-    ))*/
-
-  val timeThing: fastparse.all.Parser[Time] = P(at ~ (time_12 | time_24))
-  val time_24: all.Parser[Time] = P(upToTwoDigits ~ ":" ~ twoDigits ~ wordSep) map {
+  private def anyWhitespace[_: P] = P(CharPred(_.isWhitespace).rep)
+  private def upToTwoDigits[_: P] = P(digit.rep(min=1, max=2).!)
+  private def twoDigits[_: P] = P((digit ~ digit).!)
+  private def at[_: P] = P(IgnoreCase("at") ~ wordSep)
+  private def timeThing[_: P] = P(at ~ (time_12 | time_24))
+  private def time_24[_: P] = P(upToTwoDigits ~ ":" ~ twoDigits ~ wordSep) map {
     case (hours, minutes) => AbsoluteTime(LocalTime.of(hours.toInt, minutes.toInt))
   }
-  val time_12: all.Parser[Time] = P(upToTwoDigits ~ (":" ~ twoDigits).? ~ anyWhitespace.? ~ ("am" | "pm").! ~ wordSep) map {
-    case (hours, Some(minutes), "am") => AbsoluteTime(LocalTime.of(hours.toInt, minutes.toInt))
-    case (hours, None, "am") => AbsoluteTime(LocalTime.of(hours.toInt, 0))
-    case (hours, Some(minutes), "pm") => AbsoluteTime(LocalTime.of(hours.toInt + 12, minutes.toInt))
-    case (hours, None, "pm") => AbsoluteTime(LocalTime.of(hours.toInt + 12, 0))
+  private def am[_: P] = P(StringInIgnoreCase("am")).map(_ => Am)
+  private def pm[_: P] = P(StringInIgnoreCase("pm")).map(_ => Pm)
+  private def daytime[_: P] = P(am | pm)
+  private def time_12[_: P] = P(upToTwoDigits ~ (":" ~ twoDigits).? ~ anyWhitespace.? ~ daytime ~ wordSep) map {
+    case (hours, Some(minutes), Am) => AbsoluteTime(LocalTime.of(hours.toInt, minutes.toInt))
+    case (hours, None, Am) => AbsoluteTime(LocalTime.of(hours.toInt, 0))
+    case (hours, Some(minutes), Pm) => AbsoluteTime(LocalTime.of(hours.toInt + 12, minutes.toInt))
+    case (hours, None, Pm) => AbsoluteTime(LocalTime.of(hours.toInt + 12, 0))
   }
 
-  val me: fastparse.all.Parser[Target] = P(IgnoreCase("me").! ~ wordSep).map(_ => Me)
-  val user: fastparse.all.Parser[Target] = P("@" ~ word.! ~ wordSep).map(User)
-  val channel: fastparse.all.Parser[Target] = P("#" ~ word.! ~ wordSep).map(Channel)
-  val target: fastparse.all.Parser[Target] = P(me | user | channel)
-
-  val quotedString: all.Parser[String] = P("\"" ~ CharPred(_ != '"').rep.! ~ "\"" ~ anyWhitespace)
-
-  val message: all.Parser[String] = P((that | to).? ~ quotedString)
-
-  val test: all.Parser[(Int, CertainDay, Time)] = P(certainDays ~ timeThing)
-
-  val onCertainDays: all.Parser[Schedule] = P(
+  private def numberWord[_: P](word: String, number: Int) = {
+    P(IgnoreCase(word).map(_ => number) ~ wordSep)
+  }
+  private def zero[_: P] = numberWord("zero", 0)
+  private def one[_: P] = numberWord("one", 1)
+  private def two[_: P] = numberWord("two", 2)
+  private def digit[_: P] = P(CharPred(_.isDigit).!)
+  private def number[_: P] = P(digit.rep(1).!.map(_.toInt) ~ wordSep)
+  private def numberThing[_: P] = P(number | one | two | zero)
+  private def every[_: P] = P(IgnoreCase("every") ~ wordSep)
+  private def certainDays[_: P] = P(every ~ numberThing.?.map(_.getOrElse(1)) ~ (weekday | weekdays))
+  private def onCertainDays[_: P] = P(
     //certainDays.map((n: Int, days: CertainDay) => OnCertainDays(days, n, CurrentTime))
     (certainDays ~ timeThing).map {
       case (n: Int, days: CertainDay, time: Time) => OnCertainDays(days, n, time)
     }
   )
 
-  val reminder: all.Parser[ParseResult] = P(Start ~ target ~ message ~ onCertainDays).map {
-    case (target_, message_, schedule) => ParseResult(target_, message_, Seq(schedule))
+  private def quotedString[_: P] = P("\"" ~ CharPred(_ != '"').rep.! ~ "\"" ~ anyWhitespace)
+
+  private def that[_: P] = P(IgnoreCase("that") ~ wordSep)
+  private def to[_: P] = P(IgnoreCase("to") ~ wordSep)
+  private def message[_: P] = P((that | to).? ~ quotedString)
+
+  private def wordSep[_: P] = P(CharPred(c => c.isWhitespace || c.isControl).rep(1) | End)
+  private def word[_: P] = P(CharPred(c => !c.isWhitespace && !c.isControl).rep(1))
+
+  private def me[_: P] = P(IgnoreCase("me").! ~ wordSep).map(_ => Me)
+  private def user[_: P] = P("@" ~ word.! ~ wordSep).map(User)
+  private def channel[_: P] = P("#" ~ word.! ~ wordSep).map(Channel)
+  private def target[_: P] = P(me | user | channel)
+  private def reminder[_: P] = P(Start ~ target ~ message ~ onCertainDays).map {
+    case (_target, _message, _schedule) => ParseResult(_target, _message, Seq(_schedule))
+  }
+
+  def parseReminder(reminderString: String): Parsed[ParseResult] = {
+    parse(reminderString, reminder(_))
   }
 }

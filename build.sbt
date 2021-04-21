@@ -1,25 +1,21 @@
 name := """matterminder"""
 organization := "de.neuland"
 
-version := "1.0-SNAPSHOT"
+version := "1.0.0-RC01"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+lazy val root = (project in file("."))
+  .enablePlugins(PlayScala)
 
-scalaVersion := "2.11.11"
+scalaVersion := "2.13.5"
 
 libraryDependencies += filters
 
-libraryDependencies += "org.postgresql" % "postgresql" % "9.3-1100-jdbc4"
-libraryDependencies += "com.typesafe.slick" %% "slick" % "2.1.0"
-
-libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % Test
-
-libraryDependencies += "com.lihaoyi" %% "fastparse" % "0.4.3"
-
-libraryDependencies += ws
-
-// Adds additional packages into Twirl
-//TwirlKeys.templateImports += "de.neuland.controllers._"
-
-// Adds additional packages into conf/routes
-// play.sbt.routes.RoutesKeys.routesImport += "de.neuland.binders._"
+libraryDependencies ++= Seq(
+  "org.postgresql" % "postgresql" % "42.2.19",
+  "com.typesafe.slick" %% "slick" % "3.3.3",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
+  "com.lihaoyi" %% "fastparse" % "2.3.2",
+  ws,
+  guice,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
+)

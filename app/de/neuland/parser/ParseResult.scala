@@ -1,11 +1,10 @@
 package de.neuland.parser
 
-import java.time.{DayOfWeek, LocalDateTime, LocalTime}
+import play.api.Logging
+
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
-
-import play.api.Logger
-
+import java.time.{DayOfWeek, LocalDateTime, LocalTime}
 import scala.language.implicitConversions
 
 sealed trait Target
@@ -24,7 +23,7 @@ case object Week extends Interval {
 sealed trait CertainDay {
   val toDaysOfWeek: List[DayOfWeek]
 }
-object CertainDay {
+object CertainDay extends Logging {
   def fromString(stringRepresentation: String): Option[CertainDay] = {
     stringRepresentation match {
       case AllWeekdays.toString => Option(AllWeekdays)
@@ -36,7 +35,7 @@ object CertainDay {
       case Saturday.toString => Option(Saturday)
       case Sunday.toString => Option(Sunday)
       case _ =>
-        Logger.warn(s"Could not parse CertainDay: $stringRepresentation")
+        logger.warn(s"Could not parse CertainDay: $stringRepresentation")
         Option.empty
     }
   }
@@ -76,6 +75,9 @@ case object Sunday extends CertainDay {
   override val toDaysOfWeek = List(DayOfWeek.SUNDAY)
 }
 
+sealed trait Daytime
+case object Am extends Daytime
+case object Pm extends Daytime
 
 
 sealed trait Time {
@@ -88,14 +90,14 @@ case class AbsoluteTime(time: LocalTime) extends Time {
   override def toString: String = AbsoluteTime.formatter.format(time)
   override def getLocalTime: LocalTime = time
 }
-object AbsoluteTime {
+object AbsoluteTime extends Logging {
   val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
   def fromString(stringRepresentation: String): Option[AbsoluteTime] = {
     try {
       Option(AbsoluteTime(LocalTime.parse(stringRepresentation, formatter)))
     } catch {
       case _: Throwable =>
-        Logger.warn(s"Could not parse AbsoluteTime: $stringRepresentation")
+        logger.warn(s"Could not parse AbsoluteTime: $stringRepresentation")
         Option.empty
     }
   }
@@ -113,14 +115,14 @@ sealed trait Schedule {
   case class HasSecondsOfDay(secondsOfDay: Int)
 }
 
-object Schedule {
+object Schedule extends Logging {
   def fromString(stringRepresentation: String): Option[Schedule] = {
     stringRepresentation match {
 //      case s if s.startsWith(EveryN.identifier) => EveryN.fromString(s)
       case s if s.startsWith(OnCertainDays.identifier) => OnCertainDays.fromString(s)
       case s if s.startsWith(OnceTodaySchedule.identifier) => OnceTodaySchedule.fromString(s)
       case _ =>
-        Logger.warn(s"Could not parse Schedule: $stringRepresentation")
+        logger.warn(s"Could not parse Schedule: $stringRepresentation")
         Option.empty
     }
   }
@@ -153,7 +155,7 @@ case class OnCertainDays(day: CertainDay, n: Int, time: Time) extends Schedule {
       from.`with`(TemporalAdjusters.nextOrSame(dayOfWeek))
   }
 }
-object OnCertainDays {
+object OnCertainDays extends Logging {
   val identifier = "on"
   def fromString(stringRepresentation: String): Option[OnCertainDays] = {
     val splittedRepresentation = stringRepresentation.split("\\|")
@@ -170,7 +172,7 @@ object OnCertainDays {
       maybeTime.map(time => OnCertainDays(maybeDay.get, number.get, time))
       
     } else {
-      Logger.warn(s"Could not parse OnCertainDays: $stringRepresentation")
+      logger.warn(s"Could not parse OnCertainDays: $stringRepresentation")
       Option.empty
     }
   }
@@ -180,7 +182,7 @@ object OnCertainDays {
       Option(stringRepresentation.toInt)
     } catch {
       case _: Throwable =>
-        Logger.warn(s"Could not parse number: $stringRepresentation")
+        logger.warn(s"Could not parse number: $stringRepresentation")
         Option.empty
     }
   }
@@ -198,14 +200,14 @@ case class OnceTodaySchedule(time: Time) extends Schedule {
     }
   }
 }
-object OnceTodaySchedule {
+object OnceTodaySchedule extends Logging {
   val identifier = "once"
   def fromString(stringRepresentation: String): Option[OnceTodaySchedule] = {
     val splittedRepresentation = stringRepresentation.split("\\|")
     if(splittedRepresentation.length == 2) {
       Time.fromString(splittedRepresentation(1)).map(OnceTodaySchedule.apply)
     } else {
-      Logger.warn(s"Could not parse OnceToday: $stringRepresentation")
+      logger.warn(s"Could not parse OnceToday: $stringRepresentation")
       Option.empty
     }
   }

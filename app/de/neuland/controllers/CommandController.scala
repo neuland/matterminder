@@ -1,16 +1,19 @@
 package de.neuland.controllers
 
-import javax.inject.{Inject, Singleton}
-
 import de.neuland.command.{Commands, SlashCommand}
 import de.neuland.services.ReminderService
 import play.api.libs.json.Json
-import play.api.mvc.{Action, Controller, Result}
+import play.api.mvc._
+
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class CommandController @Inject() (reminderService: ReminderService) extends Controller {
+class CommandController @Inject() (cc: ControllerComponents,
+                                   reminderService: ReminderService)
+                                  (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
-  def executeCommand = Action { request =>
+  def executeCommand: Action[AnyContent] = Action.async { request =>
     request.body.asFormUrlEncoded.map(SlashCommand(_)) match {
       case Some(slashCommand) =>
         
@@ -23,25 +26,29 @@ class CommandController @Inject() (reminderService: ReminderService) extends Con
             listReminders(slashCommand)
           case "delete" =>
             deleteReminder(slashCommand)
-          case unknownCommand => BadRequest(s"unknown command: '$unknownCommand'")
+          case unknownCommand =>
+            Future.successful(BadRequest(s"unknown command: '$unknownCommand'"))
             
         }
       case None =>
-        BadRequest("could not parse request")
+        Future.successful(BadRequest("could not parse request"))
     }
   }
 
-  private def showHelp(): Result = {
-    answer("**available commads:**\n" + Commands.commandHelpTexts.mkString("\n***\n"))
+  private def showHelp(): Future[Result] = {
+    Future.successful(answer("**available commads:**\n" + Commands.commandHelpTexts.mkString("\n***\n")))
   }
 
   private def createReminder(slashCommand: SlashCommand) = {
-    val successfullyCreated = reminderService.createReminder(slashCommand)
-    if (successfullyCreated) {
-      answer(s":white_check_mark: reminder saved: ${slashCommand.text}")
-    } else {
-      answer(s":x: could not save reminder: ${slashCommand.text}")
-    }
+    reminderService
+      .createReminder(slashCommand)
+      .map { successfullyCreated =>
+        if (successfullyCreated) {
+          answer(s":white_check_mark: reminder saved: ${slashCommand.text}")
+        } else {
+          answer(s":x: could not save reminder: ${slashCommand.text}")
+        }
+      }
   }
 
   private def listReminders(slashCommand: SlashCommand) = {
@@ -50,24 +57,37 @@ class CommandController @Inject() (reminderService: ReminderService) extends Con
     } else {
       slashCommand.channelName
     }
-    val reminders = reminderService.getRemindersForChannel(channel, slashCommand.token)
-    val answerText = if (reminders.isEmpty) {
-      s"no reminders in channel '$channel'"
-    } else {
-      s"reminders in channel '$channel' (${reminders.length}): \n" + reminders.mkString("\n")
-    }
-    answer(answerText)
+    reminderService
+      .getRemindersForChannel(channel, slashCommand.token)
+      .map{ reminders =>
+        val answerText = if (reminders.isEmpty) {
+          s"no reminders in channel '$channel'"
+        } else {
+          s"reminders in channel '$channel' (${reminders.length}): \n" + reminders.mkString("\n")
+        }
+        answer(answerText)
+      }
   }
 
-  private def deleteReminder(slashCommand: SlashCommand): Result = {
+  private def deleteReminder(slashCommand: SlashCommand): Future[Result] = {
     val reminderId = slashCommand.command.trim
     if (reminderId.isEmpty) {
-      answer(":x: **No reminder id given!**")
-    } else if(!reminderService.doesReminderExist(reminderId)) {
-      answer(s":x: **Reminder '$reminderId' does not exist!**")
+      Future.successful(answer(":x: **No reminder id given!**"))
     } else {
-      reminderService.delete(reminderId)
-      answer(s":white_check_mark: Reminder '$reminderId' was successfully deleted.")
+      reminderService
+        .doesReminderExist(reminderId)
+        .flatMap { reminderExists =>
+          if(reminderExists) {
+            reminderService
+              .delete(reminderId)
+              .map(_ => answer(s":white_check_mark: Reminder '$reminderId' was successfully deleted."))
+              .recover {
+                case t: Throwable => answer(s" :heavy_exclamation_mark: Reminder '$reminderId' could not be deleted: ${t.getMessage}")
+              }
+          } else {
+            Future.successful(answer(s":x: **Reminder '$reminderId' does not exist!**"))
+          }
+        }
     }
   }
   

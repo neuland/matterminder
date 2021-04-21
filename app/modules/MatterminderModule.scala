@@ -6,11 +6,9 @@ import de.neuland.scheduling.Scheduler
 import play.api.libs.concurrent.AkkaGuiceSupport
 
 class MatterminderModule extends AbstractModule with AkkaGuiceSupport {
-  
-  def configure() = {
-    
+
+  override def configure(): Unit = {
     bindActor[Scheduler]("scheduler")
     bindActor[WebhookClient]("webhookClient")
-    
   }
 }

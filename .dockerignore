@@ -6,6 +6,6 @@ target
 /.project
 /.settings
 /RUNNING_PID
-data/
+database/
 **/local.conf
-docker/env.list
+*/env.list

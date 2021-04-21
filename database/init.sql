@@ -1,7 +1,5 @@
 CREATE DATABASE matterminder;
 
-\connect matterminder;
-
 CREATE USER matterminder WITH PASSWORD 'secretMatterminderDBPassword';
 
 CREATE TABLE "public"."reminders" ( 

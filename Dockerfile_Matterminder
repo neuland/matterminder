@@ -36,6 +36,7 @@ RUN sbt dist
 
 
 
+
 FROM amazoncorretto:11-alpine
 RUN apk update \
  && apk add bash \

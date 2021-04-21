@@ -2,14 +2,17 @@ package de.neuland.logging
 
 import javax.inject.Inject
 import akka.stream.Materializer
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import play.api.Logger
+import play.api.{Logger, Logging}
 import play.api.mvc._
 
-class AccessLoggingFilter @Inject() (implicit val mat: Materializer) extends Filter {
+import scala.util.{Failure, Success}
 
-  def apply(next: (RequestHeader) => Future[Result])(request: RequestHeader): Future[Result] = {
+class AccessLoggingFilter @Inject() (implicit val mat: Materializer) extends Filter with Logging {
+
+  def apply(next: RequestHeader => Future[Result])(request: RequestHeader): Future[Result] = {
     val startTime = System.currentTimeMillis()
     
     val headersString = request.headers.toMap
@@ -18,16 +21,13 @@ class AccessLoggingFilter @Inject() (implicit val mat: Materializer) extends Fil
       
     val resultFuture = next(request)
 
-    resultFuture.onSuccess {
-      case result =>
+    resultFuture.onComplete {
+      case Failure(exception) =>
         val duration = System.currentTimeMillis() - startTime
-        Logger.info(s"request succeeded: method=${request.method} uri=${request.uri} headers=[$headersString] status=${result.header.status} duration=${duration}ms")
-    }
-    
-    resultFuture.onFailure {
-      case t =>
+        logger.info(s"request failed: method=${request.method} uri=${request.uri} headers=[$headersString] duration=${duration}ms error=" + "\"" + exception.getMessage + "\"")
+      case Success(result) =>
         val duration = System.currentTimeMillis() - startTime
-        Logger.info(s"request failed: method=${request.method} uri=${request.uri} headers=[$headersString] duration=${duration}ms error=" + "\"" + t.getMessage + "\"")
+        logger.info(s"request succeeded: method=${request.method} uri=${request.uri} headers=[$headersString] status=${result.header.status} duration=${duration}ms")
     }
 
     resultFuture

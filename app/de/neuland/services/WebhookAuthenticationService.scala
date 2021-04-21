@@ -1,21 +1,22 @@
 package de.neuland.services
 
-import play.api.Logger
-import javax.inject.Singleton
+import play.api.{Configuration, Logging}
 
-import com.typesafe.config.{Config, ConfigFactory}
+import javax.inject.{Inject, Singleton}
 
 @Singleton
-class WebhookAuthenticationService {
+class WebhookAuthenticationService @Inject()(config: Configuration) extends Logging {
   
-  private val slashCommandTokenToWebhookKeyMap = createSlashCommandTokenToWebhookKeyMap(ConfigFactory.load("mattermost.conf"))
+  private val slashCommandTokenToWebhookKeyMap = createSlashCommandTokenToWebhookKeyMap
   
   def getWebhookKeyForCommandToken(commandToken: String): String = {
     slashCommandTokenToWebhookKeyMap.getOrElse(commandToken, "")
   }
   
-  private def createSlashCommandTokenToWebhookKeyMap(config: Config): Map[String, String] = {
-    config.getString("slashCommandTokensToWebhookKeys").split("#")
+  private def createSlashCommandTokenToWebhookKeyMap: Map[String, String] = {
+    config
+      .get[String]("mattermost.slashCommandTokensToWebhookKeys")
+      .split("#")
       .flatMap(splitToTokenAndKey)
       .toMap
   }
@@ -25,7 +26,7 @@ class WebhookAuthenticationService {
     if (splitEntry != null && splitEntry.length == 2) {
       Option(splitEntry(0) -> splitEntry(1))
     } else {
-      Logger.warn(s"Could not parse slash command token to webhook key mapping: $splitEntry")
+      logger.warn(s"Could not parse slash command token to webhook key mapping: ${splitEntry.mkString("Array(", ", ", ")")}")
       Option.empty
     }
   }

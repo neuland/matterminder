@@ -1,36 +1,62 @@
-version: "2"
+version: "3.7"
 services:
 
   mattermost:
-    container_name: matterminder_mattermost-preview
-    image: mattermost/mattermost-preview
+    container_name: mattermost
+    image: mattermost/mattermost-team-edition
+    depends_on:
+      - mattermost-db
+    environment:
+      - MM_USERNAME=mmuser
+      - MM_PASSWORD=_someSecretPassword937
+      - MM_DBNAME=mattermost
+      - MM_SQLSETTINGS_DATASOURCE=postgres://mmuser:_someSecretPassword937@mattermost-db:5432/mattermost?sslmode=disable&connect_timeout=10
+    networks:
+      - matterminder
     expose:
       - 8065
     ports:
       - 8065:8065
 
-  matterminder-db:
-    container_name: matterminder_db
-    image: postgres:9-alpine
-    volumes:
-      - ../data:/var/lib/postgresql/data/persistent_data:rw
+  mattermost-db:
+    container_name: mattermost-db
+    image: postgres:13.2-alpine
     environment:
-      - POSTGRES_USER=matterminder
-      - POSTGRES_PASSWORD=_someSecretPostgresPassword937
-      - POSTGRES_DB=matterminder
-      - PGDATA=/var/lib/postgresql/data/persistent_data
+      - POSTGRES_USER=mmuser
+      - POSTGRES_PASSWORD=_someSecretPassword937
+      - POSTGRES_DB=mattermost
+      #- PGDATA=/var/lib/postgresql/data/persistent_data
+    networks:
+      - matterminder
     expose:
       - 5432
     ports:
       - 5432:5432
 
+  matterminder-db:
+    container_name: matterminder-db
+    image: postgres:13.2-alpine
+    environment:
+      - POSTGRES_USER=matterminder
+      - POSTGRES_PASSWORD=_someSecretPassword518
+      - POSTGRES_DB=matterminder
+      #- PGDATA=/var/lib/postgresql/data/persistent_data
+    networks:
+      - matterminder
+    expose:
+      - 5432
+
   matterminder:
     container_name: matterminder
     build:
       context: ../
-      dockerfile: docker/Dockerfile_Matterminder
+      dockerfile: Dockerfile_Matterminder
+    depends_on:
+      - mattermost
+      - matterminder-db
     environment:
-      - JAVA_OPTS=-Dplay.crypto.secret="secret.matterMinder_4ppl1c4t10nS3cr3t" #-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005
+      #- JAVA_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005
+      - APPLICATION_SECRET=secret.matterMinder_4ppl1c4t10nS3cr3t
       - TZ=Europe/Berlin
       - MATTERMINDER_MATTERMOST_SERVER=mattermost
       - MATTERMINDER_MATTERMOST_PORT=8065
@@ -39,13 +65,16 @@ services:
       - MATTERMINDER_POSTGRES_SERVER=matterminder-db
       - MATTERMINDER_POSTGRES_DATABASE=matterminder
       - MATTERMINDER_POSTGRES_USER=matterminder
-      - MATTERMINDER_POSTGRES_PASSWORD=_someSecretPostgresPassword937
-    depends_on:
-      - mattermost
-      - matterminder-db
+      - MATTERMINDER_POSTGRES_PASSWORD=_someSecretPassword518
+    networks:
+      - matterminder
     expose:
       - 9000
-    #ports:
+    ports:
+      - 9000:9000
     #  - 5005:5005
     stdin_open: true
-      
+
+
+networks:
+  matterminder:
